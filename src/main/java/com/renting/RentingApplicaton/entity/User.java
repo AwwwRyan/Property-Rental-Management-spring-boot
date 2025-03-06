@@ -8,7 +8,7 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer userId;
+    private Integer user_id;
 
     @Column(nullable = false, unique = true)
     private String email;
@@ -30,7 +30,7 @@ public class User {
 
     // Constructor with all fields
     public User(Integer userId, String email, String password, String name, String phone, String role) {
-        this.userId = userId;
+        this.user_id = userId;
         this.email = email;
         this.password = password;
         this.name = name;
@@ -40,7 +40,7 @@ public class User {
 
     // Getters
     public Integer getUserId() {
-        return userId;
+        return user_id;
     }
 
     public String getEmail() {
@@ -65,7 +65,7 @@ public class User {
 
     // Setters
     public void setUserId(Integer userId) {
-        this.userId = userId;
+        this.user_id = userId;
     }
 
     public void setEmail(String email) {
