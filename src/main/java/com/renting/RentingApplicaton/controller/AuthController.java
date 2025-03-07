@@ -30,13 +30,6 @@ public class AuthController {
         this.refreshTokenService = refreshTokenService;
     }
 
-    @GetMapping("/")
-    public ResponseEntity<Map<String, String>> home() {
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Welcome to the Property Rental API!");
-        return ResponseEntity.ok(response);
-    }
-
     @PostMapping("/register")
     public ResponseEntity<Map<String, String>> register(@RequestBody User user) {
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
@@ -60,13 +53,13 @@ public class AuthController {
         if (userOptional.isPresent() && passwordEncoder.matches(password, userOptional.get().getPassword())) {
             User user = userOptional.get();
 
-            // Generate both access and refresh tokens
+            // Generate access and refresh tokens
             String accessToken = jwtUtil.generateAccessToken(email);
-            String refreshToken = jwtUtil.generateRefreshToken(email);
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
             return ResponseEntity.ok(Map.of(
                     "accessToken", accessToken,
-                    "refreshToken", refreshToken
+                    "refreshToken", refreshToken.getToken()
             ));
         }
 
@@ -74,22 +67,29 @@ public class AuthController {
     }
 
 
+
     @PostMapping("/refresh-token")
     public ResponseEntity<Map<String, String>> refreshToken(@RequestBody Map<String, String> request) {
         String refreshToken = request.get("refreshToken");
 
-        try {
-            if (!jwtUtil.validateToken(refreshToken)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid refresh token"));
-            }
-
-            String email = jwtUtil.extractEmail(refreshToken);
-            String newAccessToken = jwtUtil.generateAccessToken(email);
-
-            return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Failed to refresh token"));
+        Optional<RefreshToken> storedToken = refreshTokenService.findByToken(refreshToken);
+        if (storedToken.isEmpty() || refreshTokenService.isExpired(storedToken.get())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid or expired refresh token"));
         }
+
+        // Generate a new access token
+        String email = storedToken.get().getUser().getEmail();
+        String newAccessToken = jwtUtil.generateAccessToken(email);
+
+        // Delete old refresh token and issue a new one
+        refreshTokenService.deleteByUser(storedToken.get().getUser());
+        RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(storedToken.get().getUser());
+
+        return ResponseEntity.ok(Map.of(
+                "accessToken", newAccessToken,
+                "refreshToken", newRefreshToken.getToken()
+        ));
     }
+
 
 }

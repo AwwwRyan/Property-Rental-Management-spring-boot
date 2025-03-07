@@ -4,6 +4,7 @@ import com.renting.RentingApplicaton.entity.RefreshToken;
 import com.renting.RentingApplicaton.entity.User;
 import com.renting.RentingApplicaton.repository.RefreshTokenRepository;
 import com.renting.RentingApplicaton.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.Optional;
@@ -40,6 +41,7 @@ public class RefreshTokenService {
     }
 
     // Delete token
+    @Transactional
     public void deleteByUser(User user) {
         refreshTokenRepository.deleteByUser(user);
     }
