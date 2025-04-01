@@ -4,6 +4,7 @@ import com.renting.RentingApplicaton.entity.appointment.Appointment;
 import com.renting.RentingApplicaton.entity.property.Property;
 import com.renting.RentingApplicaton.entity.auth.User;
 import com.renting.RentingApplicaton.repository.appointment.AppointmentRepository;
+import com.renting.RentingApplicaton.repository.property.PropertyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,43 +13,113 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Arrays;
 
 @Service
 public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
+    private final PropertyRepository propertyRepository;
 
     @Autowired
-    public AppointmentService(AppointmentRepository appointmentRepository) {
+    public AppointmentService(
+            AppointmentRepository appointmentRepository,
+            PropertyRepository propertyRepository) {
         this.appointmentRepository = appointmentRepository;
+        this.propertyRepository = propertyRepository;
     }
 
     // Create new appointment
     @Transactional
-    public Appointment createAppointment(Property property, User tenant, 
-                                       LocalDateTime appointmentTime, String message) {
+    public Appointment createAppointment(Integer propertyId, Integer userId,
+                                       LocalDateTime appointmentDateTime, String message) {
+        // Get fresh Property instance from database
+        Property property = propertyRepository.findById(propertyId)
+                .orElseThrow(() -> new RuntimeException("Property not found"));
+
         Appointment appointment = new Appointment();
         appointment.setProperty(property);
-        appointment.setTenant(tenant);
-        appointment.setAppointmentTime(appointmentTime);
+        appointment.setUserId(userId);
+        appointment.setAppointmentDateTime(appointmentDateTime);
         appointment.setStatus("PENDING");
         appointment.setMessage(message);
-        
+
         return appointmentRepository.save(appointment);
     }
 
     // Get appointment by ID
     public Appointment getAppointmentById(Integer appointmentId) {
         return appointmentRepository.findById(appointmentId)
-            .orElseThrow(() -> new RuntimeException("Appointment not found"));
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
     }
 
-    // Get tenant's appointments
-    public List<Appointment> getTenantAppointments(User tenant) {
-        return appointmentRepository.findByTenant(tenant);
+    // Get user's appointments
+    public List<Appointment> getUserAppointments(User user) {
+        return appointmentRepository.findByUserId(user.getUserId());
+    }
+
+    // Get appointments by date range
+    public List<Appointment> getAppointmentsByDateRange(LocalDateTime start, LocalDateTime end) {
+        return appointmentRepository.findByAppointmentDateTimeBetween(start, end);
+    }
+
+    // Get appointments by user and status
+    public List<Appointment> getAppointmentsByUserAndStatus(User user, String status) {
+        return appointmentRepository.findByUserIdAndStatus(user.getUserId(), status);
+    }
+
+    // Get appointments by property and status
+    public List<Appointment> getAppointmentsByPropertyAndStatus(Property property, String status) {
+        return appointmentRepository.findByPropertyAndStatus(property, status);
+    }
+
+    // Get appointments for date range
+    public List<Appointment> getAppointmentsForDateRange(LocalDateTime start, LocalDateTime end) {
+        return appointmentRepository.findByAppointmentDateTimeBetween(start, end);
+    }
+
+    // Get user statistics
+    public Map<String, Object> getUserStatistics(User user) {
+        Map<String, Object> statistics = new HashMap<>();
+        
+        statistics.put("totalAppointments", appointmentRepository.countByUserId(user.getUserId()));
+        statistics.put("pendingAppointments", appointmentRepository.countByUserIdAndStatus(user.getUserId(), "PENDING"));
+        statistics.put("approvedAppointments", appointmentRepository.countByUserIdAndStatus(user.getUserId(), "APPROVED"));
+        statistics.put("rejectedAppointments", appointmentRepository.countByUserIdAndStatus(user.getUserId(), "REJECTED"));
+        statistics.put("recentAppointments", appointmentRepository.findByUserIdOrderByAppointmentDateTimeDesc(user.getUserId()));
+        
+        return statistics;
+    }
+
+    // Get landlord statistics
+    public Map<String, Object> getLandlordStatistics(User landlord) {
+        Map<String, Object> statistics = new HashMap<>();
+        
+        statistics.put("recentAppointments", 
+            appointmentRepository.findByProperty_LandlordOrderByAppointmentDateTimeDesc(landlord));
+        
+        return statistics;
+    }
+
+    // Get appointment counts for date range
+    public Map<String, Long> getAppointmentCounts(User user, LocalDateTime start, LocalDateTime end) {
+        Map<String, Long> counts = new HashMap<>();
+        
+        if (user.getRole().equals("TENANT")) {
+            counts.put("appointments", 
+                appointmentRepository.countByUserIdAndAppointmentDateTimeBetween(
+                    user.getUserId(), start, end));
+        } else {
+            counts.put("appointments", 
+                appointmentRepository.countByProperty_LandlordAndAppointmentDateTimeBetween(
+                    user, start, end));
+        }
+        
+        return counts;
     }
 
     // Get landlord's appointments
+    @Transactional(readOnly = true)
     public List<Appointment> getLandlordAppointments(User landlord) {
         return appointmentRepository.findByProperty_Landlord(landlord);
     }
@@ -56,85 +127,36 @@ public class AppointmentService {
     // Update appointment status
     @Transactional
     public Appointment updateAppointmentStatus(Integer appointmentId, String status) {
-        Appointment appointment = getAppointmentById(appointmentId);
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        
+        // Validate status
+        if (!isValidStatus(status)) {
+            throw new IllegalArgumentException("Invalid status: " + status);
+        }
+        
         appointment.setStatus(status);
         return appointmentRepository.save(appointment);
-    }
-
-    // Get appointments by property
-    public List<Appointment> getAppointmentsByProperty(Property property) {
-        return appointmentRepository.findByProperty(property);
-    }
-
-    // Get appointments by status
-    public List<Appointment> getAppointmentsByStatus(String status) {
-        return appointmentRepository.findByStatus(status);
-    }
-
-    // Get appointments for date range
-    public List<Appointment> getAppointmentsForDateRange(LocalDateTime start, LocalDateTime end) {
-        return appointmentRepository.findByAppointmentTimeBetween(start, end);
-    }
-
-    // Get tenant's appointments by status
-    public List<Appointment> getTenantAppointmentsByStatus(User tenant, String status) {
-        return appointmentRepository.findByTenantAndStatus(tenant, status);
     }
 
     // Cancel appointment
     @Transactional
     public Appointment cancelAppointment(Integer appointmentId) {
-        Appointment appointment = getAppointmentById(appointmentId);
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        
+        // Only allow cancellation of pending or approved appointments
+        if (!appointment.getStatus().equals("PENDING") && !appointment.getStatus().equals("APPROVED")) {
+            throw new IllegalStateException("Cannot cancel appointment with status: " + appointment.getStatus());
+        }
+        
         appointment.setStatus("CANCELLED");
         return appointmentRepository.save(appointment);
     }
 
-    // Check if appointment time is available
-    public boolean isTimeSlotAvailable(Property property, LocalDateTime proposedTime) {
-        LocalDateTime endTime = proposedTime.plusHours(1); // Assuming 1-hour appointments
-        List<Appointment> conflictingAppointments = appointmentRepository
-            .findByAppointmentTimeBetween(proposedTime, endTime);
-        return conflictingAppointments.isEmpty();
+    // Helper method to validate status
+    private boolean isValidStatus(String status) {
+        return Arrays.asList("PENDING", "APPROVED", "REJECTED", "CANCELLED", "COMPLETED")
+                .contains(status.toUpperCase());
     }
-
-    // Get appointment history with statistics
-    public Map<String, Object> getAppointmentAnalytics(User user, String role) {
-        Map<String, Object> analytics = new HashMap<>();
-        
-        if (role.equals("TENANT")) {
-            // Tenant analytics
-            analytics.put("totalAppointments", appointmentRepository.countByTenant(user));
-            analytics.put("pendingAppointments", appointmentRepository.countByTenantAndStatus(user, "PENDING"));
-            analytics.put("completedAppointments", appointmentRepository.countByTenantAndStatus(user, "COMPLETED"));
-            analytics.put("cancelledAppointments", appointmentRepository.countByTenantAndStatus(user, "CANCELLED"));
-            analytics.put("recentAppointments", appointmentRepository.findByTenantOrderByAppointmentTimeDesc(user));
-        } else if (role.equals("LANDLORD")) {
-            // Landlord analytics
-            analytics.put("totalAppointments", appointmentRepository.countByProperty_Landlord(user));
-            analytics.put("pendingAppointments", appointmentRepository.countByProperty_LandlordAndStatus(user, "PENDING"));
-            analytics.put("completedAppointments", appointmentRepository.countByProperty_LandlordAndStatus(user, "COMPLETED"));
-            analytics.put("cancelledAppointments", appointmentRepository.countByProperty_LandlordAndStatus(user, "CANCELLED"));
-            analytics.put("recentAppointments", appointmentRepository.findByProperty_LandlordOrderByAppointmentTimeDesc(user));
-        }
-        
-        return analytics;
-    }
-
-    // Get monthly appointment statistics
-    public Map<String, Long> getMonthlyAppointmentStats(User user, String role, int year, int month) {
-        LocalDateTime startOfMonth = LocalDateTime.of(year, month, 1, 0, 0);
-        LocalDateTime endOfMonth = startOfMonth.plusMonths(1).minusSeconds(1);
-        
-        Map<String, Long> monthlyStats = new HashMap<>();
-        
-        if (role.equals("TENANT")) {
-            monthlyStats.put("total", appointmentRepository.countByTenantAndAppointmentTimeBetween(
-                user, startOfMonth, endOfMonth));
-        } else if (role.equals("LANDLORD")) {
-            monthlyStats.put("total", appointmentRepository.countByProperty_LandlordAndAppointmentTimeBetween(
-                user, startOfMonth, endOfMonth));
-        }
-        
-        return monthlyStats;
-    }
-} 
+}

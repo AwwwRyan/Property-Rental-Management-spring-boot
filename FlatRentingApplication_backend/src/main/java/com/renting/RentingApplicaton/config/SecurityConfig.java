@@ -13,8 +13,13 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.authentication.AuthenticationManager;
 
 import com.renting.RentingApplicaton.security.JwtAuthenticationFilter;
+import com.renting.RentingApplicaton.service.auth.CustomUserDetailsService;
 
 import java.util.Arrays;
 
@@ -22,11 +27,22 @@ import java.util.Arrays;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private final CustomUserDetailsService customUserDetailsService;
+
+    public SecurityConfig(CustomUserDetailsService customUserDetailsService) {
+        this.customUserDetailsService = customUserDetailsService;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
+        return authConfig.getAuthenticationManager();
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/api/auth/**")  // Disable CSRF for auth endpoints
+                .ignoringRequestMatchers("/api/auth/**", "/api/properties/**", "/api/appointments/**")  // Add appointments
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -40,38 +56,30 @@ public class SecurityConfig {
                     "/api/auth/reset-password"
                 ).permitAll()
                 
-                // Public property endpoints
-                .requestMatchers(
-                    "/api/properties",              // GET all properties
-                    "/api/properties/search",       // Search properties
-                    "/api/properties/{id}"          // GET single property
-                ).permitAll()
+                // Public property endpoints - GET methods only
+                .requestMatchers(HttpMethod.GET, "/api/properties").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/properties/search").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/properties/{id}").permitAll()
                 
                 // Tenant-only endpoints
                 .requestMatchers(
-                    "/api/appointments",                    // Create appointment
-                    "/api/appointments/my-appointments",    // Get tenant's appointments
-                    "/api/appointments/{id}/cancel"         // Cancel appointment
+                    "/api/appointments/**",  // Allow all appointment endpoints for tenants
+                    "/api/appointments/my-appointments",
+                    "/api/appointments/{id}/cancel"
                 ).hasRole("TENANT")
                 
                 // Landlord-only endpoints
+                .requestMatchers(HttpMethod.POST, "/api/properties").hasRole("LANDLORD")
+                .requestMatchers(HttpMethod.PUT, "/api/properties/{id}").hasRole("LANDLORD")
+                .requestMatchers(HttpMethod.DELETE, "/api/properties/{id}").hasRole("LANDLORD")
+                .requestMatchers("/api/properties/my-properties").hasRole("LANDLORD")
                 .requestMatchers(
-                    "/api/properties/add",                  // Add property
-                    "/api/properties/my-properties",        // Get landlord's properties
-                    "/api/properties/{id}/update",          // Update property
-                    "/api/properties/{id}/delete",          // Delete property
-                    "/api/appointments/landlord-appointments", // Get landlord's appointments
-                    "/api/appointments/{id}/status"         // Update appointment status
+                    "/api/appointments/landlord-appointments",
+                    "/api/appointments/{id}/status"
                 ).hasRole("LANDLORD")
                 
                 // Admin-only endpoints
-                .requestMatchers(
-                    "/api/admin/**",                       // All admin endpoints
-                    "/api/admin/dashboard",                // Admin dashboard
-                    "/api/admin/users",                    // User management
-                    "/api/admin/properties",               // Property management
-                    "/api/admin/appointments"              // Appointment management
-                ).hasRole("ADMIN")
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 
                 // Analytics endpoints (accessible by both TENANT and LANDLORD)
                 .requestMatchers(

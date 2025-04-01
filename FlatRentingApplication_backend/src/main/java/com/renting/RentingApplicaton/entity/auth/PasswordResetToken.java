@@ -13,8 +13,8 @@ public class PasswordResetToken {
     @Column(nullable = false, unique = true)
     private String token;
 
-    @OneToOne(targetEntity = User.class, fetch = FetchType.EAGER)
-    @JoinColumn(nullable = false, name = "user_id")
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "user_id", unique = true, nullable = false)
     private User user;
 
     @Column(nullable = false)
@@ -61,6 +61,8 @@ public class PasswordResetToken {
     public void setExpiryDate(Instant expiryDate) {
         this.expiryDate = expiryDate;
     }
-// Getters and Setters
-    // ... add all getters and setters ...
+
+    public boolean isExpired() {
+        return expiryDate.isBefore(Instant.now());
+    }
 } 

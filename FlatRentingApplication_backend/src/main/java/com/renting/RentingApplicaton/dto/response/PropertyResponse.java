@@ -1,5 +1,7 @@
 package com.renting.RentingApplicaton.dto.response;
 
+import com.renting.RentingApplicaton.entity.property.Property;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -12,7 +14,8 @@ public class PropertyResponse {
     private String status;
     private String propertyType;
     private List<String> amenities;
-    private LandlordDTO landlord;
+    private Integer landlordId;
+    private String landlordName;
 
     // Inner class for landlord details
     public static class LandlordDTO {
@@ -88,11 +91,25 @@ public class PropertyResponse {
         this.amenities = amenities;
     }
 
-    public LandlordDTO getLandlord() {
-        return landlord;
+    public Integer getLandlordId() {
+        return landlordId;
     }
 
-    public void setLandlord(LandlordDTO landlord) {
-        this.landlord = landlord;
+    public void setLandlordId(Integer landlordId) {
+        this.landlordId = landlordId;
+    }
+
+    public String getLandlordName() {
+        return landlordName;
+    }
+
+    public void setLandlordName(String landlordName) {
+        this.landlordName = landlordName;
+    }
+
+    private PropertyResponse convertToResponse(Property property) {
+        PropertyResponse response = new PropertyResponse();
+        // Convert Property entity to PropertyResponse
+        return response;
     }
 }

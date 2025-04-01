@@ -1,11 +1,14 @@
 package com.renting.RentingApplicaton.controller.property;
 
-import com.renting.RentingApplicaton.entity.auth.User;
-import com.renting.RentingApplicaton.entity.property.Property;
-import com.renting.RentingApplicaton.service.property.PropertyService;
 import com.renting.RentingApplicaton.dto.request.PropertyRequest;
 import com.renting.RentingApplicaton.dto.response.PropertyResponse;
+import com.renting.RentingApplicaton.entity.auth.User;
+import com.renting.RentingApplicaton.entity.property.Property;
+import com.renting.RentingApplicaton.exception.PropertyNotFoundException;
+import com.renting.RentingApplicaton.service.property.PropertyService;
+import com.renting.RentingApplicaton.repository.auth.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -18,70 +21,85 @@ import java.util.List;
 public class PropertyController {
 
     private final PropertyService propertyService;
+    private final UserRepository userRepository;
 
     @Autowired
-    public PropertyController(PropertyService propertyService) {
+    public PropertyController(PropertyService propertyService, UserRepository userRepository) {
         this.propertyService = propertyService;
+        this.userRepository = userRepository;
     }
 
-    // List all properties (public)
     @GetMapping
-    public ResponseEntity<List<Property>> getAllProperties() {
-        return ResponseEntity.ok(propertyService.getAllProperties());
+    public ResponseEntity<List<PropertyResponse>> getAllProperties() {
+        List<PropertyResponse> properties = propertyService.getAllProperties();
+        return ResponseEntity.ok(properties);
     }
 
-    // Get single property
     @GetMapping("/{id}")
     public ResponseEntity<Property> getProperty(@PathVariable Integer id) {
-        return ResponseEntity.ok(propertyService.getPropertyById(id));
+        try {
+            Property property = propertyService.getPropertyById(id);
+            return ResponseEntity.ok(property);
+        } catch (PropertyNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
-    // Add new property (landlord only)
     @PostMapping
-    public ResponseEntity<PropertyResponse> addProperty(
-            @RequestBody PropertyRequest request,
-            Authentication authentication) {
-        User landlord = (User) authentication.getPrincipal();
-        Property property = propertyService.addProperty(request, landlord);
-        return ResponseEntity.ok(convertToResponse(property));
+    public ResponseEntity<PropertyResponse> addProperty(@RequestBody PropertyRequest request, Authentication authentication) {
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String email = authentication.getName();
+        User landlord = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        PropertyResponse property = propertyService.addProperty(request, landlord);
+        return ResponseEntity.status(HttpStatus.CREATED).body(property);
     }
 
-    private PropertyResponse convertToResponse(Property property) {
-        PropertyResponse response = new PropertyResponse();
-        // Convert Property entity to PropertyResponse
-        return response;
-    }
-
-    // Update property (landlord only)
     @PutMapping("/{id}")
-    public ResponseEntity<Property> updateProperty(@PathVariable Integer id, 
-                                                 @RequestBody Property property) {
-        return ResponseEntity.ok(propertyService.updateProperty(id, property));
+    public ResponseEntity<PropertyResponse> updateProperty(@PathVariable Integer id, @RequestBody PropertyRequest request) {
+        try {
+            PropertyResponse updatedProperty = propertyService.updateProperty(id,request);
+            return ResponseEntity.ok(updatedProperty);
+        } catch (PropertyNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
     }
 
-    // Delete property (landlord only)
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteProperty(@PathVariable Integer id) {
-        propertyService.deleteProperty(id);
-        return ResponseEntity.ok().build();
+        try {
+            propertyService.deleteProperty(id);
+            return ResponseEntity.ok().build();
+        } catch (PropertyNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
-    // Search properties
     @GetMapping("/search")
-    public ResponseEntity<List<Property>> searchProperties(
+    public ResponseEntity<List<PropertyResponse>> searchProperties(
             @RequestParam(required = false) String location,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) String status) {
-        return ResponseEntity.ok(
-            propertyService.searchProperties(location, minPrice, maxPrice, status)
-        );
+        List<PropertyResponse> properties = propertyService.searchProperties(location, minPrice, maxPrice, status);
+        return ResponseEntity.ok(properties);
     }
 
-    // Get landlord's properties
     @GetMapping("/my-properties")
-    public ResponseEntity<List<Property>> getMyProperties(Authentication authentication) {
-        User landlord = (User) authentication.getPrincipal();
-        return ResponseEntity.ok(propertyService.getPropertiesByLandlord(landlord));
+    public ResponseEntity<List<PropertyResponse>> getMyProperties(Authentication authentication) {
+        if (authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String email = authentication.getName();
+        User landlord = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<PropertyResponse> properties = propertyService.getPropertiesByLandlord(landlord);
+        return ResponseEntity.ok(properties);
     }
-} 
+}

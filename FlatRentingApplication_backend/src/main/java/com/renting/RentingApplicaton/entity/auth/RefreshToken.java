@@ -2,11 +2,10 @@ package com.renting.RentingApplicaton.entity.auth;
 
 import jakarta.persistence.*;
 import java.time.Instant;
-import com.renting.RentingApplicaton.entity.auth.User;
 
 @Entity
+@Table(name = "refresh_token")
 public class RefreshToken {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -15,7 +14,7 @@ public class RefreshToken {
     private String token;
 
     @OneToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "user_id")
+    @JoinColumn(name = "user_id", referencedColumnName = "userId")
     private User user;
 
     @Column(nullable = false)

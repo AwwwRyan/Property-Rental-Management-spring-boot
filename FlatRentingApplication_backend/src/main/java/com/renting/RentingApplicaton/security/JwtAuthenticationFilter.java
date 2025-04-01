@@ -31,19 +31,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         
         String authHeader = request.getHeader("Authorization");
+        System.out.println("Request URL: " + request.getRequestURL());
+        System.out.println("Request Method: " + request.getMethod());
+        System.out.println("Auth Header: " + (authHeader != null ? "Present" : "Not present"));
         
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String jwt = authHeader.substring(7);
+            System.out.println("JWT Token present, validating...");
             
             if (jwtUtil.validateToken(jwt)) {
                 String email = jwtUtil.extractEmail(jwt);
+                System.out.println("Token valid for user: " + email);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                System.out.println("User authorities: " + userDetails.getAuthorities());
                 
                 UsernamePasswordAuthenticationToken authentication = 
                     new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                     
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                System.out.println("Authentication set in SecurityContext");
+            } else {
+                System.out.println("Token validation failed");
             }
+        } else {
+            System.out.println("No JWT token found in request");
         }
         
         filterChain.doFilter(request, response);

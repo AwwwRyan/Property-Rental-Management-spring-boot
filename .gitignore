@@ -1,4 +1,55 @@
-node_modules/
-venv/
-.env
-__pycache__/
+Profile Dashboard - UI & Contents
+A. Header Section (User Info & Stats)
+
+A visually appealing hero section at the top of the dashboard. It should include:
+1. Profile (Avatar component) – Circular profile image(will be stored in my codebase, all users will have same avatar)
+2. name
+3. Stats (Number Cards) –
+3.1. Total Movies Watched
+3.2. Total Reviews Written
+3.3. Average Movie Rating Given
+3.4. Watchlist Count
+
+B. Recent Reviews (Carousel/Grid View)
+Card-based UI showing the last 4-5 movie reviews written by the user.
+
+Each card should display:
+Movie poster (on the left).
+Title + Year.
+Short review snippet (with “Read More” option).
+User’s rating (star icons).
+
+Option to “See All Reviews” (Leads to a dedicated review list page).
+
+C. Watchlist (Scrollable Grid/List View)
+A scrollable horizontal list/grid of movies the user has added to their watchlist.
+
+Each movie card should include:
+Movie Poster.
+Title + Year.
+“Watched” toggle (to mark it as watched).
+
+CTA Button: “Manage Watchlist” (Navigates to full watchlist page).
+
+D. Review Analytics (Data Visualization)
+Charts & Graphs (Using Recharts or similar):
+
+Pie Chart – Distribution of movie genres watched.
+
+Bar Graph – Ratings frequency (e.g., how many 5-star, 4-star ratings).
+
+Heatmap or Timeline – Movie-watching activity over time.
+
+Stats Overview:
+
+Most-watched genre.
+
+Highest-rated movie.
+
+Lowest-rated movie.
+
+E. Settings & Preferences Section
+A collapsible section for profile settings, including:
+
+Edit Profile (Change name, bio, avatar).
+Contact.

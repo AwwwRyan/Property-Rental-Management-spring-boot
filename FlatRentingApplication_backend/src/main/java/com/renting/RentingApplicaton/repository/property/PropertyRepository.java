@@ -51,13 +51,27 @@ public interface PropertyRepository extends JpaRepository<Property, Integer> {
     // Count properties by status
     Long countByStatus(String status);
 
-    @Query("SELECT DISTINCT p FROM Property p " +
-           "LEFT JOIN p.amenities a " +
-           "WHERE (:location IS NULL OR LOWER(p.location) LIKE LOWER(CONCAT('%', :location, '%'))) " +
-           "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
-           "AND (:maxPrice IS NULL OR p.price <= :maxPrice) " +
-           "AND (:propertyType IS NULL OR p.propertyType = :propertyType) " +
-           "AND (:amenities IS NULL OR a IN :amenities) " +
+    @Query("SELECT DISTINCT p FROM Property p WHERE " +
+           "(:location IS NULL OR LOWER(p.location) LIKE LOWER(CONCAT('%', :location, '%'))) AND " +
+           "(:minPrice IS NULL OR p.price >= :minPrice) AND " +
+           "(:maxPrice IS NULL OR p.price <= :maxPrice) AND " +
+           "(:propertyType IS NULL OR p.property_type = :propertyType)")
+    List<Property> findPropertiesWithAdvancedFilters(
+        @Param("location") String location,
+        @Param("minPrice") BigDecimal minPrice,
+        @Param("maxPrice") BigDecimal maxPrice,
+        @Param("propertyType") String propertyType,
+        @Param("amenities") List<String> amenities,
+        @Param("sortBy") String sortBy
+    );
+
+    // Add this query method for advanced filters
+    @Query("SELECT p FROM Property p WHERE " +
+           "(:location IS NULL OR LOWER(p.location) LIKE LOWER(CONCAT('%', :location, '%'))) AND " +
+           "(:minPrice IS NULL OR p.price >= :minPrice) AND " +
+           "(:maxPrice IS NULL OR p.price <= :maxPrice) AND " +
+           "(:propertyType IS NULL OR p.property_type = :propertyType) AND " +
+           "(:sortBy IS NULL OR 1=1) " + // Handle sorting in service layer
            "ORDER BY CASE " +
            "    WHEN :sortBy = 'price_asc' THEN p.price END ASC, " +
            "    CASE WHEN :sortBy = 'price_desc' THEN p.price END DESC")
@@ -66,7 +80,6 @@ public interface PropertyRepository extends JpaRepository<Property, Integer> {
         @Param("minPrice") BigDecimal minPrice,
         @Param("maxPrice") BigDecimal maxPrice,
         @Param("propertyType") String propertyType,
-        @Param("amenities") List<String> amenities,
         @Param("sortBy") String sortBy
     );
 } 

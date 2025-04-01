@@ -1,6 +1,7 @@
 package com.renting.RentingApplicaton.entity.auth;
 
 import jakarta.persistence.*;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -8,7 +9,10 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer user_id;
+    private Integer userId;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RefreshToken> refreshTokens;
 
     @Column(nullable = false, unique = true)
     private String email;
@@ -30,7 +34,7 @@ public class User {
 
     // Constructor with all fields
     public User(Integer userId, String email, String password, String name, String phone, String role) {
-        this.user_id = userId;
+        this.userId = userId;
         this.email = email;
         this.password = password;
         this.name = name;
@@ -40,7 +44,7 @@ public class User {
 
     // Getters
     public Integer getUserId() {
-        return user_id;
+        return userId;
     }
 
     public String getEmail() {
@@ -65,7 +69,7 @@ public class User {
 
     // Setters
     public void setUserId(Integer userId) {
-        this.user_id = userId;
+        this.userId = userId;
     }
 
     public void setEmail(String email) {

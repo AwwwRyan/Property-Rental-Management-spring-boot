@@ -2,8 +2,7 @@ package com.renting.RentingApplicaton.entity.appointment;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-
-import com.renting.RentingApplicaton.entity.auth.User;
+import org.hibernate.annotations.CreationTimestamp;
 import com.renting.RentingApplicaton.entity.property.Property;
 
 @Entity
@@ -12,44 +11,36 @@ public class Appointment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer appointment_id;
+    @Column(name = "appointment_id")
+    private Integer appointmentId;
 
     @ManyToOne
-    @JoinColumn(name = "property_id", referencedColumnName = "property_id")
+    @JoinColumn(name = "property_id", nullable = false)
     private Property property;
 
-    @ManyToOne
-    @JoinColumn(name = "tenant_id", referencedColumnName = "user_id")
-    private User tenant;
+    @Column(name = "user_id", nullable = false)
+    private Integer userId;
 
-    @Column(nullable = false)
-    private LocalDateTime appointmentTime;
+    @Column(name = "appointment_datetime", nullable = false, columnDefinition = "DATETIME(6)")
+    private LocalDateTime appointmentDateTime;
 
-    @Column(nullable = false)
-    private String status; // PENDING, APPROVED, REJECTED, COMPLETED
+    @Column(length = 255)
+    private String message;
 
-    private String message; // Optional message from tenant
+    @Column(nullable = false, length = 255)
+    private String status;
 
-    // Default constructor
-    public Appointment() {}
-
-    // Constructor with fields
-    public Appointment(Property property, User tenant, LocalDateTime appointmentTime, 
-                      String status, String message) {
-        this.property = property;
-        this.tenant = tenant;
-        this.appointmentTime = appointmentTime;
-        this.status = status;
-        this.message = message;
-    }
+    @CreationTimestamp
+    @Column(name = "created_at", columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    private LocalDateTime createdAt;
 
     // Getters and Setters
     public Integer getAppointmentId() {
-        return appointment_id;
+        return appointmentId;
     }
 
     public void setAppointmentId(Integer appointmentId) {
-        this.appointment_id = appointmentId;
+        this.appointmentId = appointmentId;
     }
 
     public Property getProperty() {
@@ -60,20 +51,28 @@ public class Appointment {
         this.property = property;
     }
 
-    public User getTenant() {
-        return tenant;
+    public Integer getUserId() {
+        return userId;
     }
 
-    public void setTenant(User tenant) {
-        this.tenant = tenant;
+    public void setUserId(Integer userId) {
+        this.userId = userId;
     }
 
-    public LocalDateTime getAppointmentTime() {
-        return appointmentTime;
+    public LocalDateTime getAppointmentDateTime() {
+        return appointmentDateTime;
     }
 
-    public void setAppointmentTime(LocalDateTime appointmentTime) {
-        this.appointmentTime = appointmentTime;
+    public void setAppointmentDateTime(LocalDateTime appointmentDateTime) {
+        this.appointmentDateTime = appointmentDateTime;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 
     public String getStatus() {
@@ -84,11 +83,7 @@ public class Appointment {
         this.status = status;
     }
 
-    public String getMessage() {
-        return message;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-} 
+}
