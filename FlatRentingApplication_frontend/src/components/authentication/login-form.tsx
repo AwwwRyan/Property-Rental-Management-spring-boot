@@ -23,6 +23,10 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import { useLogin } from "@/hooks/useLogin"
+import { useState } from "react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertCircle } from "lucide-react"
 
 const loginFormSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -33,6 +37,9 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
+  const { handleLogin, isLoading, error } = useLogin();
+  const [loginError, setLoginError] = useState<string | null>(null);
+  
   const form = useForm<z.infer<typeof loginFormSchema>>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
@@ -41,9 +48,13 @@ export function LoginForm({
     },
   })
 
-  function onSubmit(values: z.infer<typeof loginFormSchema>) {
-    // Handle form submission
-    console.log(values)
+  async function onSubmit(values: z.infer<typeof loginFormSchema>) {
+    try {
+      setLoginError(null);
+      await handleLogin(values);
+    } catch (err) {
+      setLoginError("Invalid email or password. Please try again.");
+    }
   }
 
   return (<>
@@ -56,6 +67,12 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {loginError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{loginError}</AlertDescription>
+            </Alert>
+          )}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6">
               <div className="grid gap-6">
@@ -93,8 +110,8 @@ export function LoginForm({
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full">
-                  Login
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Logging in..." : "Login"}
                 </Button>
               </div>
               <div className="text-center text-sm">

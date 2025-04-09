@@ -17,6 +17,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.authentication.AuthenticationManager;
+import jakarta.servlet.http.HttpServletResponse;
 
 import com.renting.RentingApplicaton.security.JwtAuthenticationFilter;
 import com.renting.RentingApplicaton.service.auth.CustomUserDetailsService;
@@ -41,9 +42,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
-            .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/api/auth/**", "/api/properties/**", "/api/appointments/**")  // Add appointments
-                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
+            .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
@@ -51,7 +50,6 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/auth/login",
                     "/api/auth/register",
-                    "/api/auth/refresh-token",
                     "/api/auth/forgot-password",
                     "/api/auth/reset-password"
                 ).permitAll()
@@ -63,7 +61,7 @@ public class SecurityConfig {
                 
                 // Tenant-only endpoints
                 .requestMatchers(
-                    "/api/appointments/**",  // Allow all appointment endpoints for tenants
+                    "/api/appointments/**",
                     "/api/appointments/my-appointments",
                     "/api/appointments/{id}/cancel"
                 ).hasRole("TENANT")
@@ -90,7 +88,17 @@ public class SecurityConfig {
                 // Any other request needs authentication
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.getWriter().write("Unauthorized");
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.getWriter().write("Access Denied");
+                })
+            );
 
         return http.build();
     }

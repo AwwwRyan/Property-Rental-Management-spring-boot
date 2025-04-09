@@ -7,24 +7,19 @@ import com.renting.RentingApplicaton.dto.response.AuthenticationResponse;
 import com.renting.RentingApplicaton.dto.response.MessageResponse;
 import com.renting.RentingApplicaton.entity.auth.User;
 import com.renting.RentingApplicaton.service.auth.AuthenticationService;
-import com.renting.RentingApplicaton.service.auth.RefreshTokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class AuthController {
     private final AuthenticationService authenticationService;
-    private final RefreshTokenService refreshTokenService;
 
     @Autowired
-    public AuthController(
-            AuthenticationService authenticationService,
-            RefreshTokenService refreshTokenService) {
+    public AuthController(AuthenticationService authenticationService) {
         this.authenticationService = authenticationService;
-        this.refreshTokenService = refreshTokenService;
     }
 
     @PostMapping("/register")
@@ -36,28 +31,11 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthenticationResponse> login(
             @RequestBody LoginRequest request) {
-        AuthenticationResponse response = authenticationService.login(request);
-        
-        // Create refresh token
-        refreshTokenService.createRefreshToken(response.getUserId());  // Use getUserId() instead of User object
-        
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/refresh-token")
-    public ResponseEntity<AuthenticationResponse> refreshToken(
-            @RequestBody String refreshToken) {
-        return ResponseEntity.ok(authenticationService.refreshToken(refreshToken));
+        return ResponseEntity.ok(authenticationService.login(request));
     }
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@RequestBody LogoutRequest request) {
-        User user = authenticationService.getUserFromToken(request.getToken());
-        if (user != null) {
-            // Delete refresh token using userId
-            refreshTokenService.deleteByUserId(user.getUserId());
-            return ResponseEntity.ok(new MessageResponse("Logged out successfully!"));
-        }
-        return ResponseEntity.badRequest().body(new MessageResponse("Invalid token"));
+        return ResponseEntity.ok(new MessageResponse("Logged out successfully!"));
     }
 }

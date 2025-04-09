@@ -4,7 +4,6 @@ import com.renting.RentingApplicaton.dto.request.LoginRequest;
 import com.renting.RentingApplicaton.dto.request.RegisterRequest;
 import com.renting.RentingApplicaton.dto.response.AuthenticationResponse;
 import com.renting.RentingApplicaton.entity.auth.User;
-import com.renting.RentingApplicaton.entity.auth.RefreshToken;
 import com.renting.RentingApplicaton.repository.auth.UserRepository;
 import com.renting.RentingApplicaton.util.JwtUtil;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,19 +21,16 @@ public class AuthenticationService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    private final RefreshTokenService refreshTokenService;
 
     public AuthenticationService(
             AuthenticationManager authenticationManager,
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            JwtUtil jwtUtil,
-            RefreshTokenService refreshTokenService) {
+            JwtUtil jwtUtil) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
-        this.refreshTokenService = refreshTokenService;
     }
 
     @Transactional
@@ -55,21 +51,16 @@ public class AuthenticationService {
         // Save user
         user = userRepository.save(user);
 
-        // Generate tokens
+        // Generate access token
         String accessToken = jwtUtil.generateAccessToken(user.getEmail(), 
             java.util.Collections.singletonList(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + user.getRole())));
-        String refreshToken = jwtUtil.generateRefreshToken(user.getEmail());
 
-        // Create refresh token in database
-        refreshTokenService.createRefreshToken(user.getUserId());
-
-        return AuthenticationResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .userId(user.getUserId())
-                .email(user.getEmail())
-                .role(user.getRole())
-                .build();
+        return new AuthenticationResponse(
+            accessToken,
+            user.getUserId(),
+            user.getEmail(),
+            user.getRole()
+        );
     }
 
     public AuthenticationResponse login(LoginRequest request) {
@@ -83,57 +74,20 @@ public class AuthenticationService {
         User user = userRepository.findByEmail(userDetails.getUsername())
             .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Generate tokens
+        // Generate access token
         String accessToken = jwtUtil.generateAccessToken(user.getEmail(), userDetails.getAuthorities());
-        String refreshToken = jwtUtil.generateRefreshToken(user.getEmail());
 
-        // Create refresh token in database
-        refreshTokenService.createRefreshToken(user.getUserId());
-
-        return AuthenticationResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .userId(user.getUserId())
-                .email(user.getEmail())
-                .role(user.getRole())
-                .build();
-    }
-
-    public AuthenticationResponse refreshToken(String refreshToken) {
-        // Verify refresh token
-        RefreshToken token = refreshTokenService.findByToken(refreshToken)
-            .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
-
-        // Check if token is expired
-        token = refreshTokenService.verifyExpiration(token);
-
-        // Get user
-        User user = token.getUser();
-
-        // Generate new tokens
-        String newAccessToken = jwtUtil.generateAccessToken(user.getEmail(), 
-            java.util.Collections.singletonList(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + user.getRole())));
-        String newRefreshToken = jwtUtil.generateRefreshToken(user.getEmail());
-
-        // Update refresh token in database
-        refreshTokenService.createRefreshToken(user.getUserId());
-
-        return AuthenticationResponse.builder()
-                .accessToken(newAccessToken)
-                .refreshToken(newRefreshToken)
-                .userId(user.getUserId())
-                .email(user.getEmail())
-                .role(user.getRole())
-                .build();
+        return new AuthenticationResponse(
+            accessToken,
+            user.getUserId(),
+            user.getEmail(),
+            user.getRole()
+        );
     }
 
     public User getUserFromToken(String token) {
-        try {
-            String email = jwtUtil.extractEmail(token);
-            return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        } catch (Exception e) {
-            throw new RuntimeException("Invalid token");
-        }
+        String email = jwtUtil.extractEmail(token);
+        return userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
     }
 } 

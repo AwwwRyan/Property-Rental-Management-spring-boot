@@ -21,9 +21,6 @@ public class JwtUtil {
     @Value("${jwt.access-token-expiration}")
     private long accessTokenExpiration;
 
-    @Value("${jwt.refresh-token-expiration}")
-    private long refreshTokenExpiration;
-
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
@@ -40,25 +37,8 @@ public class JwtUtil {
                 .compact();
     }
 
-    public String generateRefreshToken(String email) {
-        return Jwts.builder()
-                .setSubject(email)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + refreshTokenExpiration))
-                .signWith(getSigningKey())
-                .compact();
-    }
-
     public String extractEmail(String token) {
-        return extractClaims(token).getSubject();
-    }
-
-    public Claims extractClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        return extractClaim(token, Claims::getSubject);
     }
 
     public boolean validateToken(String token) {
@@ -73,7 +53,16 @@ public class JwtUtil {
         }
     }
 
-    public boolean isTokenExpired(String token) {
-        return extractClaims(token).getExpiration().before(new Date());
+    private <T> T extractClaim(String token, java.util.function.Function<Claims, T> claimsResolver) {
+        final Claims claims = extractAllClaims(token);
+        return claimsResolver.apply(claims);
+    }
+
+    private Claims extractAllClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 }
