@@ -11,11 +11,13 @@ export interface SignupRequest {
   role: 'TENANT' | 'LANDLORD';
 }
 
+export type UserRole = 'TENANT' | 'LANDLORD';
+
 export interface LoginResponse {
   accessToken: string;
   userId: number;
   email: string;
-  role: string;
+  role: UserRole;
 }
 
 export interface AuthError {

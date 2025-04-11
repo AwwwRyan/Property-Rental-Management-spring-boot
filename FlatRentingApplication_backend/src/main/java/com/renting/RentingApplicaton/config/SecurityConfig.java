@@ -61,7 +61,6 @@ public class SecurityConfig {
                 
                 // Tenant-only endpoints
                 .requestMatchers(
-                    "/api/appointments/**",
                     "/api/appointments/my-appointments",
                     "/api/appointments/{id}/cancel"
                 ).hasRole("TENANT")
@@ -70,11 +69,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/properties").hasRole("LANDLORD")
                 .requestMatchers(HttpMethod.PUT, "/api/properties/{id}").hasRole("LANDLORD")
                 .requestMatchers(HttpMethod.DELETE, "/api/properties/{id}").hasRole("LANDLORD")
-                .requestMatchers("/api/properties/my-properties").hasRole("LANDLORD")
-                .requestMatchers(
-                    "/api/appointments/landlord-appointments",
-                    "/api/appointments/{id}/status"
-                ).hasRole("LANDLORD")
+                .requestMatchers(HttpMethod.GET, "/api/properties/my-properties").hasRole("LANDLORD")
+                .requestMatchers("/api/appointments/landlord-appointments").hasRole("LANDLORD")
+                .requestMatchers(HttpMethod.PUT, "/api/appointments/{id}/status").hasRole("LANDLORD")
                 
                 // Admin-only endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -96,7 +93,7 @@ public class SecurityConfig {
                 })
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    response.getWriter().write("Access Denied");
+                    response.getWriter().write("Access Denied: " + accessDeniedException.getMessage());
                 })
             );
 

@@ -111,11 +111,13 @@ export default function PropertyDetailsPage() {
       setIsBookingSuccess(false);
       setBookingError(null);
       
+      // Combine date and time into ISO string format
+      const appointmentDateTime = new Date(`${bookingDate}T${bookingTime}`).toISOString();
+      
       const appointmentData: AppointmentRequest = {
         propertyId: property.property_id,
-        date: bookingDate,
-        time: bookingTime,
-        notes: bookingNotes
+        appointmentDateTime: appointmentDateTime,
+        message: bookingNotes
       };
       
       const result = await createAppointment(appointmentData);

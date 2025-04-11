@@ -1,35 +1,57 @@
 import { Property } from './property';
 
 export interface Appointment {
-  id: number;
-  propertyId: number;
-  property?: Property;
-  tenantId: number;
-  ownerId: number;
-  date: string;
-  time: string;
+  appointmentId: number;
+  property: {
+    property_id: number;
+    title: string;
+    property_name: string;
+    description: string;
+    address: string;
+    price: number;
+    location: string;
+    property_type: string;
+    status: string;
+    number_of_rooms: number;
+    furnished_status: string;
+    property_size: number;
+    created_at: string;
+    updated_at: string;
+  };
+  userId: number;
+  appointmentDateTime: string;
+  message: string;
   status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
-  notes: string;
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface AppointmentRequest {
   propertyId: number;
-  date: string;
-  time: string;
-  notes?: string;
+  appointmentDateTime: string;
+  message: string;
 }
 
 export interface AppointmentResponse {
-  id: number;
-  propertyId: number;
-  tenantId: number;
-  ownerId: number;
-  date: string;
-  time: string;
+  appointmentId: number;
+  property: {
+    property_id: number;
+    title: string;
+    property_name: string;
+    description: string;
+    address: string;
+    price: number;
+    location: string;
+    property_type: string;
+    status: string;
+    number_of_rooms: number;
+    furnished_status: string;
+    property_size: number;
+    created_at: string;
+    updated_at: string;
+  };
+  userId: number;
+  appointmentDateTime: string;
+  message: string;
   status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
-  notes: string;
   createdAt: string;
-  updatedAt: string;
 } 

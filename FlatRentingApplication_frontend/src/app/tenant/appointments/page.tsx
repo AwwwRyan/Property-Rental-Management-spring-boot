@@ -31,7 +31,7 @@ import {
   XCircle,
   Clock4
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format } from "date-fns";
 
 export default function AppointmentsPage() {
   const { appointments, isLoading, error, cancelAppointment } = useAppointments();
@@ -46,7 +46,7 @@ export default function AppointmentsPage() {
     return appointment.status.toLowerCase() === selectedStatus.toLowerCase();
   }).sort((a, b) => {
     if (sortBy === 'date') {
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
+      return new Date(a.appointmentDateTime).getTime() - new Date(b.appointmentDateTime).getTime();
     }
     return 0;
   });
@@ -101,6 +101,17 @@ export default function AppointmentsPage() {
         {statusConfig.label}
       </span>
     );
+  };
+
+  // When displaying the appointment date/time
+  const formatAppointmentDateTime = (dateTimeString: string) => {
+    try {
+      const date = new Date(dateTimeString);
+      return format(date, 'MMM dd, yyyy hh:mm a');
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
+    }
   };
 
   return (
@@ -164,21 +175,17 @@ export default function AppointmentsPage() {
               <div className="space-y-4">
                 {filteredAppointments?.map((appointment) => (
                   <div 
-                    key={appointment.id}
+                    key={appointment.appointmentId}
                     className="bg-gray-800 rounded-lg shadow-sm p-6"
                   >
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                       {/* Property Info */}
                       <div className="flex-1">
                         <h3 className="text-lg font-medium text-white mb-2">
-                          {appointment.property?.title || `Property #${appointment.propertyId}`}
+                          {appointment.property?.title || `Property #${appointment.property.property_id}`}
                         </h3>
                         <div className="flex items-center text-gray-300 mb-2">
                           <Home className="h-4 w-4 mr-2" />
-                          <span>{appointment.property?.property_type || 'Property Details Unavailable'}</span>
-                        </div>
-                        <div className="flex items-center text-gray-300">
-                          <MapPin className="h-4 w-4 mr-2" />
                           <span>{appointment.property?.location || 'Location unavailable'}</span>
                         </div>
                       </div>
@@ -187,11 +194,11 @@ export default function AppointmentsPage() {
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center text-gray-300">
                           <Calendar className="h-4 w-4 mr-2" />
-                          <span>{format(new Date(appointment.date), 'PPP')}</span>
+                          <span>{format(new Date(appointment.appointmentDateTime), "PPP")}</span>
                         </div>
                         <div className="flex items-center text-gray-300">
                           <Clock className="h-4 w-4 mr-2" />
-                          <span>{format(new Date(`${appointment.date}T${appointment.time}`), 'p')}</span>
+                          <span>{format(new Date(appointment.appointmentDateTime), "p")}</span>
                         </div>
                         <StatusBadge status={appointment.status} />
                       </div>
@@ -202,7 +209,7 @@ export default function AppointmentsPage() {
                           <Button
                             variant="outline"
                             className="border-red-600 text-red-400 hover:bg-red-900/30 hover:text-red-300"
-                            onClick={() => handleCancelClick(appointment.id)}
+                            onClick={() => handleCancelClick(appointment.appointmentId)}
                           >
                             Cancel Appointment
                           </Button>

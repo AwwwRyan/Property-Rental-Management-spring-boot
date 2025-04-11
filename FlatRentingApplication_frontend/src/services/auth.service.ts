@@ -1,5 +1,6 @@
 import { API_BASE_URL, defaultHeaders } from './api';
 import { LoginRequest, LoginResponse, AuthError, SignupRequest } from '@/types/auth';
+import { fetchWithAuthInterceptor } from './api-interceptor';
 
 export class AuthService {
   static async login(credentials: LoginRequest): Promise<LoginResponse> {

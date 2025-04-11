@@ -5,24 +5,25 @@ import {
   Home, 
   Building2, 
   Calendar, 
-  Heart, 
   Settings, 
   LogOut,
-  User
+  User,
+  Plus
 } from 'lucide-react';
 import { useAuth } from '@/context/auth.context';
 
-interface SidebarProps {
+interface LandlordSidebarProps {
   className?: string;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
+export const LandlordSidebar: React.FC<LandlordSidebarProps> = ({ className = '' }) => {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   
-  console.log('Sidebar - User:', user);
-  console.log('Sidebar - User Role:', user?.role);
-  console.log('Sidebar - Current Pathname:', pathname);
+  // Add debug logs
+  console.log('LandlordSidebar - User:', user);
+  console.log('LandlordSidebar - User Role:', user?.role);
+  console.log('LandlordSidebar - Current Pathname:', pathname);
   
   const isActive = (path: string) => {
     return pathname === path || pathname?.startsWith(`${path}/`);
@@ -40,9 +41,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
       
       <nav className="flex-1">
         <Link 
-          href="/tenant/dashboard" 
+          href="/landlord/dashboard" 
           className={`flex items-center px-4 py-3 ${
-            isActive('/tenant/dashboard') 
+            isActive('/landlord/dashboard') 
               ? 'bg-blue-900/30 text-blue-400 font-medium' 
               : 'text-gray-300 hover:bg-gray-700'
           }`}
@@ -52,21 +53,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
         </Link>
         
         <Link 
-          href="/tenant/properties" 
+          href="/landlord/properties" 
           className={`flex items-center px-4 py-3 ${
-            isActive('/tenant/properties') 
+            isActive('/landlord/properties') 
               ? 'bg-blue-900/30 text-blue-400 font-medium' 
               : 'text-gray-300 hover:bg-gray-700'
           }`}
         >
           <Building2 className="h-5 w-5 mr-3" />
-          Properties
+          My Properties
         </Link>
         
         <Link 
-          href="/tenant/appointments" 
+          href="/landlord/appointments" 
           className={`flex items-center px-4 py-3 ${
-            isActive('/tenant/appointments') 
+            isActive('/landlord/appointments') 
               ? 'bg-blue-900/30 text-blue-400 font-medium' 
               : 'text-gray-300 hover:bg-gray-700'
           }`}
@@ -76,15 +77,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
         </Link>
         
         <Link 
-          href="/tenant/saved-properties" 
+          href="/landlord/properties/new" 
           className={`flex items-center px-4 py-3 ${
-            isActive('/tenant/saved-properties') 
+            isActive('/landlord/properties/new') 
               ? 'bg-blue-900/30 text-blue-400 font-medium' 
               : 'text-gray-300 hover:bg-gray-700'
           }`}
         >
-          <Heart className="h-5 w-5 mr-3" />
-          Saved Properties
+          <Plus className="h-5 w-5 mr-3" />
+          Add Property
         </Link>
         
         <Link 

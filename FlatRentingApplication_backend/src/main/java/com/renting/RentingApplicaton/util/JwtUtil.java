@@ -10,6 +10,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
@@ -26,11 +27,15 @@ public class JwtUtil {
     }
 
     public String generateAccessToken(String email, Collection<? extends GrantedAuthority> authorities) {
+        List<String> authorityStrings = authorities.stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+        
+        System.out.println("Generating token for email: " + email + " with authorities: " + authorityStrings);
+        
         return Jwts.builder()
                 .setSubject(email)
-                .claim("authorities", authorities.stream()
-                        .map(GrantedAuthority::getAuthority)
-                        .collect(Collectors.toList()))
+                .claim("authorities", authorityStrings)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
                 .signWith(getSigningKey())
@@ -49,6 +54,7 @@ public class JwtUtil {
                 .parseClaimsJws(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
+            System.out.println("Token validation failed: " + e.getMessage());
             return false;
         }
     }
@@ -59,10 +65,13 @@ public class JwtUtil {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parserBuilder()
+        Claims claims = Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+        
+        System.out.println("Token claims: " + claims);
+        return claims;
     }
 }

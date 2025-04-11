@@ -78,12 +78,14 @@ export const useAppointments = () => {
         throw new Error('User not authenticated');
       }
       
+      console.log('Creating appointment with token:', user.accessToken.substring(0, 10) + '...');
+      
       const newAppointment = await AppointmentService.createAppointment(appointment, user.accessToken);
       setAppointments(prev => [...prev, newAppointment]);
       return newAppointment;
     } catch (err) {
+      console.error('Error in createAppointment hook:', err);
       setError('Failed to create appointment');
-      console.error(err);
       return null;
     } finally {
       setIsLoading(false);
@@ -100,7 +102,7 @@ export const useAppointments = () => {
       }
       
       const updatedAppointment = await AppointmentService.updateAppointmentStatus(id, status, user.accessToken);
-      setAppointments(prev => prev.map(a => a.id === id ? updatedAppointment : a));
+      setAppointments(prev => prev.map(a => a.appointmentId === id ? updatedAppointment : a));
       return updatedAppointment;
     } catch (err) {
       setError('Failed to update appointment status');
@@ -113,7 +115,11 @@ export const useAppointments = () => {
 
   const cancelAppointment = async (id: number) => {
     try {
-      await AppointmentService.cancelAppointment(id);
+      if (!user?.accessToken) {
+        throw new Error('User not authenticated');
+      }
+      
+      await AppointmentService.cancelAppointment(id, user.accessToken);
       await fetchMyAppointments(); // Refresh the appointments list
     } catch (error) {
       console.error('Error cancelling appointment:', error);

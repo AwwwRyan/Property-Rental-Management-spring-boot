@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { LoginResponse } from '@/types/auth';
+import { LoginResponse, UserRole } from '@/types/auth';
 
 interface AuthContextType {
   user: LoginResponse | null;
@@ -34,7 +34,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        // Normalize the role when loading from storage
+        if (parsedUser.role) {
+          parsedUser.role = parsedUser.role.toUpperCase() as UserRole;
+        }
+        setUser(parsedUser);
       } catch (error) {
         console.error('Error parsing stored user data:', error);
         localStorage.removeItem('user');
@@ -44,8 +49,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = (userData: LoginResponse) => {
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
+    // Normalize the role to uppercase
+    const normalizedUserData = {
+      ...userData,
+      role: userData.role.toUpperCase() as UserRole
+    };
+    setUser(normalizedUserData);
+    localStorage.setItem('user', JSON.stringify(normalizedUserData));
   };
 
   const logout = () => {
