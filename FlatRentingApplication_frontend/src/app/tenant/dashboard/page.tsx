@@ -10,8 +10,7 @@ import { PropertyResponse } from '@/types/property';
 import { Appointment } from '@/types/appointment';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Search, Calendar, Eye, Heart, ChevronRight } from 'lucide-react';
+import { Calendar, Eye, Heart, ChevronRight, User } from 'lucide-react';
 import Link from 'next/link';
 import { PropertyCard } from '@/components/property/PropertyCard';
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -39,7 +38,6 @@ export default function TenantDashboard() {
     status: 'Viewed' | 'Booked';
     date: string;
   }>>([]);
-  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (appointments) {
@@ -69,12 +67,6 @@ export default function TenantDashboard() {
     }
   }, [properties]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Implement search functionality
-    console.log('Searching for:', searchQuery);
-  };
-
   return (
     <ProtectedRoute allowedRoles={['TENANT']}>
       <div className="flex h-screen bg-gray-900">
@@ -92,18 +84,7 @@ export default function TenantDashboard() {
                 </h1>
                 <p className="text-gray-400">Welcome to your dashboard</p>
               </div>
-              <form onSubmit={handleSearch} className="flex items-center w-1/3">
-                <div className="relative w-full">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <Input
-                    type="text"
-                    placeholder="Search properties..."
-                    className="pl-10 pr-4 py-2 w-full rounded-lg border border-gray-700 bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-              </form>
+              
             </div>
           </header>
 

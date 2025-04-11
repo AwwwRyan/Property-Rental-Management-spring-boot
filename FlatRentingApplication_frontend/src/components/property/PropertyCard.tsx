@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Heart, HeartOff } from 'lucide-react';
 import { useSavedProperties } from '@/hooks/useSavedProperties';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface PropertyCardProps {
   property: PropertyResponse;
@@ -31,21 +32,43 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
     }
   };
 
+  // Get image path based on property type
+  const getPropertyImage = () => {
+    const type = property.propertyType.toLowerCase();
+    switch (type) {
+      case 'apartment':
+        return '/appartment/living.jpeg';
+      case 'studio':
+        return '/studio/hall.png';
+      case 'penthouse':
+        return '/penthouse/living.jpeg';
+      case 'duplex':
+        return '/duplex/overview.jpeg';
+      case 'dorm':
+        return '/dorm/dorm.jpeg';
+      default:
+        return '/appartment/living.jpeg'; // default fallback
+    }
+  };
+
   return (
     <Card className={`bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow ${className}`}>
       <Link href={`/tenant/properties/${property.propertyId}`}>
         <div className="relative h-48 w-full">
-          <div className="absolute inset-0 bg-gray-700 rounded-t-xl">
-            {/* In a real app, use actual property images */}
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-              Property Image
-            </div>
+          <div className="absolute inset-0 bg-gray-700 rounded-t-xl overflow-hidden">
+            <Image
+              src={getPropertyImage()}
+              alt={property.title}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
           </div>
           
           {showSaveButton && (
             <button
               onClick={handleSaveToggle}
-              className="absolute top-2 right-2 p-2 rounded-full bg-gray-800 shadow-sm hover:bg-gray-700 transition-colors"
+              className="absolute top-2 right-2 p-2 rounded-full bg-gray-800/80 shadow-sm hover:bg-gray-700 transition-colors z-10"
               aria-label={isSaved ? "Remove from saved properties" : "Save property"}
             >
               {isSaved ? (
@@ -56,7 +79,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
             </button>
           )}
           
-          <div className="absolute top-2 left-2">
+          <div className="absolute top-2 left-2 z-10">
             <span className={`px-2 py-1 text-xs font-medium rounded-full ${
               property.status === 'AVAILABLE' 
                 ? 'bg-green-900/30 text-green-400' 

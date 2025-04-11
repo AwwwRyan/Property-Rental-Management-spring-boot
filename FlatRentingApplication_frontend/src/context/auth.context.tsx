@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { LoginResponse, UserRole } from '@/types/auth';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface AuthContextType {
   user: LoginResponse | null;
@@ -28,25 +29,37 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<LoginResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    // Check if user data exists in localStorage
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        // Normalize the role when loading from storage
-        if (parsedUser.role) {
-          parsedUser.role = parsedUser.role.toUpperCase() as UserRole;
+    const checkAuth = () => {
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        try {
+          const parsedUser = JSON.parse(userData);
+          // Normalize the role when loading from storage
+          if (parsedUser.role) {
+            parsedUser.role = parsedUser.role.toUpperCase() as UserRole;
+          }
+          setUser(parsedUser);
+        } catch (error) {
+          console.error('Error parsing stored user data:', error);
+          localStorage.removeItem('user');
         }
-        setUser(parsedUser);
-      } catch (error) {
-        console.error('Error parsing stored user data:', error);
-        localStorage.removeItem('user');
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    checkAuth();
   }, []);
+
+  // Add protection for authenticated routes
+  useEffect(() => {
+    if (!isLoading && !user && pathname !== '/login') {
+      router.push('/login');
+    }
+  }, [user, isLoading, pathname, router]);
 
   const login = (userData: LoginResponse) => {
     // Normalize the role to uppercase

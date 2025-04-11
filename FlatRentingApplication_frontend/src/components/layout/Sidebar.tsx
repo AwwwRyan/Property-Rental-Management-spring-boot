@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   Home, 
   Building2, 
@@ -18,6 +18,7 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, logout } = useAuth();
   
   console.log('Sidebar - User:', user);
@@ -30,12 +31,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
   
   const handleLogout = () => {
     logout();
+    // Clear browser history and redirect to login
+    window.history.pushState(null, '', '/login');
+    router.push('/login');
   };
   
   return (
     <div className={`w-64 bg-gray-800 shadow-md h-full flex flex-col ${className}`}>
       <div className="p-6">
-        <h2 className="text-xl font-semibold text-white">FlatRenting</h2>
+        <h2 className="text-xl font-semibold text-white">ApnaGhar</h2>
       </div>
       
       <nav className="flex-1">
@@ -85,18 +89,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ className = '' }) => {
         >
           <Heart className="h-5 w-5 mr-3" />
           Saved Properties
-        </Link>
-        
-        <Link 
-          href="/profile" 
-          className={`flex items-center px-4 py-3 ${
-            isActive('/profile') 
-              ? 'bg-blue-900/30 text-blue-400 font-medium' 
-              : 'text-gray-300 hover:bg-gray-700'
-          }`}
-        >
-          <User className="h-5 w-5 mr-3" />
-          Profile
         </Link>
         
         <Link 
