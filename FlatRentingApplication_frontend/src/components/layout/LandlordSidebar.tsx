@@ -32,7 +32,7 @@ export const LandlordSidebar: React.FC<LandlordSidebarProps> = ({ className = ''
   return (
     <div className={`w-64 bg-gray-800 shadow-md h-full flex flex-col ${className}`}>
       <div className="p-6">
-        <h2 className="text-xl font-semibold text-white">FlatRenting</h2>
+        <h2 className="text-xl font-semibold text-white">ApnaGhar</h2>
       </div>
       
       <nav className="flex-1">
@@ -85,21 +85,9 @@ export const LandlordSidebar: React.FC<LandlordSidebarProps> = ({ className = ''
         </Link>
         
         <Link 
-          href="/profile" 
+          href="/landlord/settings" 
           className={`flex items-center px-4 py-3 ${
-            isActive('/profile') 
-              ? 'bg-blue-900/30 text-blue-400 font-medium' 
-              : 'text-gray-300 hover:bg-gray-700'
-          }`}
-        >
-          <User className="h-5 w-5 mr-3" />
-          Profile
-        </Link>
-        
-        <Link 
-          href="/settings" 
-          className={`flex items-center px-4 py-3 ${
-            isActive('/settings') 
+            isActive('/landlord/settings') 
               ? 'bg-blue-900/30 text-blue-400 font-medium' 
               : 'text-gray-300 hover:bg-gray-700'
           }`}

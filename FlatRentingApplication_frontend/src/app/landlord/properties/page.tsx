@@ -12,11 +12,13 @@ import { LandlordSidebar } from "@/components/layout/LandlordSidebar"
 import { Plus, Eye, Edit2, Trash2, MapPin, Home, IndianRupee } from "lucide-react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
+import { useRouter } from "next/navigation"
 
 export default function LandlordPropertiesPage() {
   const { properties, isLoading, error } = useProperties()
   const [myProperties, setMyProperties] = useState<PropertyResponse[]>([])
   const { user } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
     if (properties && user) {
@@ -96,7 +98,8 @@ export default function LandlordPropertiesPage() {
                 {myProperties.map((property) => (
                   <Card
                     key={property.propertyId}
-                    className="bg-gray-800/90 border-gray-700/50 overflow-hidden rounded-xl shadow-xl hover:shadow-2xl hover:translate-y-[-4px] transition-all duration-300"
+                    className="bg-gray-800/90 border-gray-700/50 overflow-hidden rounded-xl shadow-xl hover:shadow-2xl hover:translate-y-[-4px] transition-all duration-300 cursor-pointer"
+                    onClick={() => router.push(`/landlord/properties/${property.propertyId}`)}
                   >
                     <div className="relative h-52 w-full group">
                       <div className="absolute inset-0 bg-gray-700 overflow-hidden">
@@ -133,19 +136,6 @@ export default function LandlordPropertiesPage() {
                     </CardContent>
                     
                     <CardFooter className="p-4 pt-2 flex justify-between gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-blue-400 border-blue-800/50 hover:bg-blue-900/20 hover:text-blue-300 flex-1"
-                      >
-                        <Link
-                          href={`/landlord/properties/${property.propertyId}`}
-                          className="flex items-center justify-center w-full"
-                        >
-                          <Eye className="h-4 w-4 mr-1.5" />
-                          View
-                        </Link>
-                      </Button>
                       <Button
                         variant="outline"
                         size="sm"

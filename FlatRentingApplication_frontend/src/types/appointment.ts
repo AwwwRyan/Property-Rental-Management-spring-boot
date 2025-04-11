@@ -1,5 +1,7 @@
 import { Property } from './property';
 
+export type AppointmentStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED';
+
 export interface Appointment {
   appointmentId: number;
   property: {
@@ -21,7 +23,7 @@ export interface Appointment {
   userId: number;
   appointmentDateTime: string;
   message: string;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+  status: AppointmentStatus;
   createdAt: string;
 }
 
@@ -52,6 +54,6 @@ export interface AppointmentResponse {
   userId: number;
   appointmentDateTime: string;
   message: string;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+  status: AppointmentStatus;
   createdAt: string;
 } 

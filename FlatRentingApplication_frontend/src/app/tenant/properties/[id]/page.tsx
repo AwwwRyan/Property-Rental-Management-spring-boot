@@ -87,21 +87,20 @@ export default function PropertyDetailsPage() {
   useEffect(() => {
     const fetchProperty = async () => {
       try {
-        setIsLoading(true);
-        const propertyData = await PropertyService.getPropertyById(Number(id));
+        if (!user?.accessToken) {
+          throw new Error('Not authenticated');
+        }
+        const propertyData = await PropertyService.getPropertyById(Number(id), user.accessToken);
         setProperty(propertyData);
       } catch (err) {
-        setError('Failed to load property details. Please try again later.');
-        console.error(err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch property');
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (id) {
-      fetchProperty();
-    }
-  }, [id]);
+    fetchProperty();
+  }, [id, user]);
 
   // Handle booking appointment
   const handleBookAppointment = async () => {

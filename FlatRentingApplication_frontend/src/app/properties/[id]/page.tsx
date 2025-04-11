@@ -87,21 +87,20 @@ export default function PropertyDetailsPage() {
   useEffect(() => {
     const fetchProperty = async () => {
       try {
-        setIsLoading(true);
-        const propertyData = await PropertyService.getPropertyById(Number(id));
+        if (!user?.accessToken) {
+          throw new Error('Not authenticated');
+        }
+        const propertyData = await PropertyService.getPropertyById(Number(id), user.accessToken);
         setProperty(propertyData);
       } catch (err) {
-        setError('Failed to load property details. Please try again later.');
-        console.error(err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch property');
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (id) {
-      fetchProperty();
-    }
-  }, [id]);
+    fetchProperty();
+  }, [id, user]);
 
   // Handle booking appointment
   const handleBookAppointment = async () => {
@@ -111,11 +110,13 @@ export default function PropertyDetailsPage() {
       setIsBookingSuccess(false);
       setBookingError(null);
       
+      // Combine date and time into ISO string format
+      const appointmentDateTime = new Date(`${bookingDate}T${bookingTime}`).toISOString();
+      
       const appointmentData: AppointmentRequest = {
         propertyId: property.property_id,
-        date: bookingDate,
-        time: bookingTime,
-        notes: bookingNotes
+        appointmentDateTime: appointmentDateTime,
+        message: bookingNotes
       };
       
       const result = await createAppointment(appointmentData);

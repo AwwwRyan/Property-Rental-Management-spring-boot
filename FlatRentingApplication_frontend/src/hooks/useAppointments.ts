@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AppointmentService } from '@/services/appointment.service';
-import { Appointment, AppointmentRequest } from '@/types/appointment';
+import { Appointment, AppointmentRequest, AppointmentStatus } from '@/types/appointment';
 import { useAuth } from '@/context/auth.context';
 
 export const useAppointments = () => {
@@ -81,7 +81,7 @@ export const useAppointments = () => {
       console.log('Creating appointment with token:', user.accessToken.substring(0, 10) + '...');
       
       const newAppointment = await AppointmentService.createAppointment(appointment, user.accessToken);
-      setAppointments(prev => [...prev, newAppointment]);
+      setAppointments(prev => [...prev, newAppointment as Appointment]);
       return newAppointment;
     } catch (err) {
       console.error('Error in createAppointment hook:', err);
@@ -92,7 +92,7 @@ export const useAppointments = () => {
     }
   };
 
-  const updateAppointmentStatus = async (id: number, status: 'CONFIRMED' | 'CANCELLED' | 'COMPLETED') => {
+  const updateAppointmentStatus = async (id: number, status: AppointmentStatus) => {
     setIsLoading(true);
     setError(null);
     
@@ -102,7 +102,7 @@ export const useAppointments = () => {
       }
       
       const updatedAppointment = await AppointmentService.updateAppointmentStatus(id, status, user.accessToken);
-      setAppointments(prev => prev.map(a => a.appointmentId === id ? updatedAppointment : a));
+      setAppointments(prev => prev.map(a => a.appointmentId === id ? updatedAppointment as Appointment : a));
       return updatedAppointment;
     } catch (err) {
       setError('Failed to update appointment status');

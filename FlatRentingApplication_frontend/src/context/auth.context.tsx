@@ -14,6 +14,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Public routes that don't require authentication
+const PUBLIC_ROUTES = ['/login', '/signup'];
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -56,7 +59,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Add protection for authenticated routes
   useEffect(() => {
-    if (!isLoading && !user && pathname !== '/login') {
+    // Don't redirect if still loading or if on a public route
+    if (isLoading || PUBLIC_ROUTES.includes(pathname)) {
+      return;
+    }
+
+    // Redirect to login if not authenticated and not on a public route
+    if (!user) {
       router.push('/login');
     }
   }, [user, isLoading, pathname, router]);
@@ -74,6 +83,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
+    router.push('/login');
   };
 
   const value = {

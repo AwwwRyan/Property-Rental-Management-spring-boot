@@ -1,5 +1,5 @@
 import { API_BASE_URL, getAuthHeaders } from './api';
-import { Appointment, AppointmentRequest, AppointmentResponse } from '@/types/appointment';
+import { Appointment, AppointmentRequest, AppointmentResponse, AppointmentStatus } from '@/types/appointment';
 import { fetchWithAuthInterceptor } from './api-interceptor';
 
 export class AppointmentService {
@@ -138,7 +138,7 @@ export class AppointmentService {
 
   static async updateAppointmentStatus(
     id: number, 
-    status: 'CONFIRMED' | 'CANCELLED' | 'COMPLETED', 
+    status: AppointmentStatus,
     token: string
   ): Promise<AppointmentResponse> {
     try {
@@ -146,18 +146,41 @@ export class AppointmentService {
         throw new Error('No authentication token provided');
       }
 
+      console.log('Updating appointment status:', {
+        appointmentId: id,
+        newStatus: status,
+        tokenLength: token.length,
+        tokenFirstChars: token.substring(0, 10) + '...'
+      });
+
+      const headers = getAuthHeaders(token);
+      console.log('Request headers:', headers);
+
+      const requestBody = {
+        status: status
+      };
+      console.log('Request body:', requestBody);
+
       const response = await fetchWithAuthInterceptor(
         `${API_BASE_URL}/appointments/${id}/status`,
         {
-          method: 'PATCH',
-          headers: getAuthHeaders(token),
-          body: JSON.stringify({ status }),
+          method: 'PUT',
+          headers: headers,
+          body: JSON.stringify(requestBody),
         },
         token
       );
 
       if (!response.ok) {
-        throw new Error('Failed to update appointment status');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Status update failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData,
+          headers: Object.fromEntries(response.headers.entries()),
+          requestHeaders: headers
+        });
+        throw new Error(errorData.message || `Failed to update appointment status: ${response.status} ${response.statusText}`);
       }
 
       const data: AppointmentResponse = await response.json();

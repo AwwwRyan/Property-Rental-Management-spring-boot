@@ -28,7 +28,10 @@ export const useProperties = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const property = await PropertyService.getPropertyById(id);
+      if (!user?.accessToken) {
+        throw new Error('Not authenticated');
+      }
+      const property = await PropertyService.getPropertyById(id, user.accessToken);
       return property;
     } catch (err) {
       setError(err instanceof Error ? err.message : `Failed to fetch property with ID ${id}`);
@@ -67,12 +70,19 @@ export const useProperties = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const updatedProperty = await PropertyService.updateProperty(id, propertyData);
+      if (!user?.accessToken) {
+        throw new Error('User not authenticated');
+      }
+
+      console.log('Updating property with token:', user.accessToken.substring(0, 10) + '...');
+      
+      const updatedProperty = await PropertyService.updateProperty(id, propertyData, user.accessToken);
       // Refresh the properties list
       await fetchProperties();
       return updatedProperty;
     } catch (err) {
-      setError(err instanceof Error ? err.message : `Failed to update property with ID ${id}`);
+      console.error('Error in updateProperty hook:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update property');
       return null;
     } finally {
       setIsLoading(false);

@@ -16,6 +16,12 @@ export const useSignup = () => {
     
     try {
       const response = await AuthService.signup(userData);
+      
+      if (!response || !response.accessToken) {
+        throw new Error('Invalid response from server');
+      }
+
+      // Only proceed with login and redirection if we have a valid response
       login(response);
       
       // Redirect based on user role
@@ -29,9 +35,11 @@ export const useSignup = () => {
       
       return response;
     } catch (err) {
+      console.error('Signup error:', err);
       const authError = err as AuthError;
-      setError(authError.message || 'An error occurred during signup');
-      throw err;
+      const errorMessage = authError.message || 'An error occurred during signup';
+      setError(errorMessage);
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }

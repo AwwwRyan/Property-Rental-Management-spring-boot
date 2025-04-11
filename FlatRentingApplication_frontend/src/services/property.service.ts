@@ -28,13 +28,18 @@ export class PropertyService {
   /**
    * Get a single property by ID
    * @param id Property ID
+   * @param token Authentication token
    * @returns Property details
    */
-  static async getPropertyById(id: number): Promise<Property> {
+  static async getPropertyById(id: number, token: string): Promise<Property> {
     try {
+      if (!token) {
+        throw new Error('No authentication token provided');
+      }
+
       const response = await fetch(`${API_BASE_URL}/properties/${id}`, {
         method: 'GET',
-        headers: getAuthHeaders(),
+        headers: getAuthHeaders(token),
       });
 
       if (!response.ok) {
@@ -98,24 +103,47 @@ export class PropertyService {
    * @param property Updated property data
    * @returns Updated property
    */
-  static async updateProperty(id: number, property: PropertyRequest): Promise<PropertyResponse> {
+  static async updateProperty(id: number, propertyData: PropertyRequest, token: string): Promise<PropertyResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/properties/${id}`, {
-        method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(property),
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Unauthorized: You must be a landlord to update properties');
-        }
-        throw new Error('Failed to update property');
+      if (!token) {
+        throw new Error('No authentication token provided');
       }
 
-      return await response.json();
+      console.log('Updating property:', {
+        propertyId: id,
+        tokenLength: token.length,
+        tokenFirstChars: token.substring(0, 10) + '...'
+      });
+
+      const headers = getAuthHeaders(token);
+      console.log('Request headers:', headers);
+
+      const response = await fetchWithAuthInterceptor(
+        `${API_BASE_URL}/properties/${id}`,
+        {
+          method: 'PUT',
+          headers: headers,
+          body: JSON.stringify(propertyData),
+        },
+        token
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Property update failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData,
+          headers: Object.fromEntries(response.headers.entries()),
+          requestHeaders: headers
+        });
+        throw new Error(errorData.message || `Failed to update property: ${response.status} ${response.statusText}`);
+      }
+
+      const data: PropertyResponse = await response.json();
+      return data;
     } catch (error) {
-      console.error(`Error updating property with ID ${id}:`, error);
+      console.error('Error updating property:', error);
       throw error;
     }
   }
