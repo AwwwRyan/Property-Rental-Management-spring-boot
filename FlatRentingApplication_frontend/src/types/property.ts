@@ -1,3 +1,5 @@
+export type PropertyStatus = 'AVAILABLE' | 'RENTED' | 'MAINTENANCE' | 'NOT_AVAILABLE'
+
 export interface Property {
   property_id: number;
   title: string;
@@ -7,7 +9,7 @@ export interface Property {
   price: number;
   location: string;
   property_type: string;
-  status: 'AVAILABLE' | 'RENTED' | 'MAINTENANCE';
+  status: PropertyStatus;
   number_of_rooms: number;
   furnished_status: string;
   property_size: number;
@@ -26,7 +28,7 @@ export interface PropertyRequest {
   numberOfRooms: number;
   furnishedStatus: string;
   propertySize: number;
-  status?: 'AVAILABLE' | 'RENTED' | 'MAINTENANCE';
+  status?: PropertyStatus;
 }
 
 export interface PropertyResponse {
@@ -35,7 +37,7 @@ export interface PropertyResponse {
   description: string;
   price: number;
   location: string;
-  status: 'AVAILABLE' | 'RENTED' | 'MAINTENANCE';
+  status: PropertyStatus;
   propertyType: string;
   landlordId: number;
   landlordName: string;

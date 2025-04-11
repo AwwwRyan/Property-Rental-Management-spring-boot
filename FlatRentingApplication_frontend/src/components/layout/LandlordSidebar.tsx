@@ -20,10 +20,6 @@ export const LandlordSidebar: React.FC<LandlordSidebarProps> = ({ className = ''
   const pathname = usePathname();
   const { user, logout } = useAuth();
   
-  // Add debug logs
-  console.log('LandlordSidebar - User:', user);
-  console.log('LandlordSidebar - User Role:', user?.role);
-  console.log('LandlordSidebar - Current Pathname:', pathname);
   
   const isActive = (path: string) => {
     return pathname === path || pathname?.startsWith(`${path}/`);

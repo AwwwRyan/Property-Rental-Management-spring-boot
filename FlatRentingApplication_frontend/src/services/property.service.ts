@@ -1,5 +1,6 @@
 import { API_BASE_URL, getAuthHeaders } from './api';
 import { Property, PropertyRequest, PropertyResponse } from '@/types/property';
+import { fetchWithAuthInterceptor } from './api-interceptor';
 
 export class PropertyService {
   /**
@@ -52,22 +53,39 @@ export class PropertyService {
    * @param property Property data
    * @returns Created property
    */
-  static async createProperty(property: PropertyRequest): Promise<PropertyResponse> {
+  static async createProperty(propertyData: PropertyRequest, token: string): Promise<PropertyResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/properties`, {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(property),
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Unauthorized: You must be a landlord to create properties');
-        }
-        throw new Error('Failed to create property');
+      if (!token) {
+        throw new Error('No authentication token provided');
       }
 
-      return await response.json();
+      console.log('Creating property with data:', {
+        ...propertyData,
+        tokenLength: token.length,
+        tokenFirstChars: token.substring(0, 10) + '...',
+        hasToken: !!token
+      });
+
+      const headers = getAuthHeaders(token);
+      console.log('Request headers:', headers);
+
+      const response = await fetchWithAuthInterceptor(
+        `${API_BASE_URL}/properties`,
+        {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(propertyData),
+        },
+        token
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to create property: ${response.status} ${response.statusText}`);
+      }
+
+      const data: PropertyResponse = await response.json();
+      return data;
     } catch (error) {
       console.error('Error creating property:', error);
       throw error;
@@ -127,27 +145,20 @@ export class PropertyService {
 
   /**
    * Get properties owned by the current landlord
+   * @param token The access token for authentication
    * @returns List of properties owned by the current landlord
    */
-  static async getMyProperties(): Promise<PropertyResponse[]> {
-    try {
-      const response = await fetch(`${API_BASE_URL}/properties/my-properties`, {
-        method: 'GET',
-        headers: getAuthHeaders(),
-      });
+  static async getMyProperties(token: string): Promise<PropertyResponse[]> {
+    const response = await fetch(`${API_BASE_URL}/properties/my-properties`, {
+      method: 'GET',
+      headers: getAuthHeaders(token),
+    });
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Unauthorized: You must be a landlord to view your properties');
-        }
-        throw new Error('Failed to fetch your properties');
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching your properties:', error);
-      throw error;
+    if (!response.ok) {
+      throw new Error('Failed to fetch properties');
     }
+
+    return response.json();
   }
 
   /**

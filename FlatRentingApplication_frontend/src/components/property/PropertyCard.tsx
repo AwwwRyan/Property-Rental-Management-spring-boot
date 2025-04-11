@@ -47,7 +47,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({
       case 'dorm':
         return '/dorm/dorm.jpeg';
       default:
-        return '/appartment/living.jpeg'; // default fallback
+        return '/appartment/living.jpeg';
     }
   };
 

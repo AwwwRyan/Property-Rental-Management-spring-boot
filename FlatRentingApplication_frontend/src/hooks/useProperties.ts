@@ -43,11 +43,18 @@ export const useProperties = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const newProperty = await PropertyService.createProperty(propertyData);
+      if (!user?.accessToken) {
+        throw new Error('User not authenticated');
+      }
+
+      console.log('Creating property with token:', user.accessToken.substring(0, 10) + '...');
+      
+      const newProperty = await PropertyService.createProperty(propertyData, user.accessToken);
       // Refresh the properties list
       await fetchProperties();
       return newProperty;
     } catch (err) {
+      console.error('Error in createProperty hook:', err);
       setError(err instanceof Error ? err.message : 'Failed to create property');
       return null;
     } finally {
@@ -94,7 +101,10 @@ export const useProperties = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const myProperties = await PropertyService.getMyProperties();
+      if (!user?.accessToken) {
+        throw new Error('User not authenticated');
+      }
+      const myProperties = await PropertyService.getMyProperties(user.accessToken);
       setProperties(myProperties);
       return myProperties;
     } catch (err) {
