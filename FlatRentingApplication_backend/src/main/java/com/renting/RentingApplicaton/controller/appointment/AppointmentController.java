@@ -79,9 +79,8 @@ public class AppointmentController {
         return ResponseEntity.ok(appointmentService.getLandlordAppointments(landlord));
     }
 
-
     // Update appointment status (landlord only)
-    @PutMapping("/{id}/status")
+    @RequestMapping(value = "/{id}/status", method = {RequestMethod.PUT, RequestMethod.PATCH})
     public ResponseEntity<Appointment> updateAppointmentStatus(
             @PathVariable("id") Integer appointmentId,
             @RequestBody Map<String, String> request) {

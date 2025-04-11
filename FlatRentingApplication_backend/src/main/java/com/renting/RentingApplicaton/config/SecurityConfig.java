@@ -23,6 +23,7 @@ import com.renting.RentingApplicaton.security.JwtAuthenticationFilter;
 import com.renting.RentingApplicaton.service.auth.CustomUserDetailsService;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 @Configuration
 @EnableWebSecurity
@@ -72,6 +73,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/properties/my-properties").hasRole("LANDLORD")
                 .requestMatchers("/api/appointments/landlord-appointments").hasRole("LANDLORD")
                 .requestMatchers(HttpMethod.PUT, "/api/appointments/{id}/status").hasRole("LANDLORD")
+                .requestMatchers(HttpMethod.PATCH, "/api/appointments/{id}/status").hasRole("LANDLORD")
                 
                 // Admin-only endpoints
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -103,10 +105,22 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000")); // Frontend URL
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:3000")); // Frontend URL
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"));
+        configuration.setAllowedHeaders(Arrays.asList(
+            "Authorization", 
+            "Content-Type", 
+            "Accept", 
+            "Origin", 
+            "Access-Control-Request-Method", 
+            "Access-Control-Request-Headers"
+        ));
+        configuration.setExposedHeaders(Arrays.asList(
+            "Access-Control-Allow-Origin", 
+            "Access-Control-Allow-Credentials"
+        ));
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L); // 1 hour for preflight request cache
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
