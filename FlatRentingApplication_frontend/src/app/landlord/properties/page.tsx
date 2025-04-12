@@ -4,28 +4,60 @@ import { useEffect, useState } from "react"
 import { useProperties } from "@/hooks/useProperties"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 import type { PropertyResponse } from "@/types/property"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { useAuth } from "@/context/auth.context"
 import { LandlordSidebar } from "@/components/layout/LandlordSidebar"
-import { Plus, Eye, Edit2, Trash2, MapPin, Home, IndianRupee } from "lucide-react"
+import { Plus, MapPin, Home, IndianRupee, Calendar } from "lucide-react"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { useRouter } from "next/navigation"
+import { AppointmentService } from "@/services/appointment.service"
+import { Appointment } from "@/types/appointment"
+
+interface PropertyWithAppointments extends PropertyResponse {
+  appointmentCount: number;
+}
 
 export default function LandlordPropertiesPage() {
   const { properties, isLoading, error } = useProperties()
-  const [myProperties, setMyProperties] = useState<PropertyResponse[]>([])
+  const [myProperties, setMyProperties] = useState<PropertyWithAppointments[]>([])
   const { user } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (properties && user) {
-      // Filter properties owned by the current user
-      const owned = properties.filter((prop) => prop.landlordId === user.userId)
-      setMyProperties(owned)
+    const fetchPropertiesWithAppointments = async () => {
+      if (properties && user) {
+        try {
+          // Filter properties owned by the current user
+          const owned = properties.filter((prop) => prop.landlordId === user.userId)
+          
+          // Fetch all landlord appointments
+          const appointments = await AppointmentService.getLandlordAppointments(user.accessToken)
+          
+          // Map properties with their appointment counts
+          const propertiesWithAppointments = owned.map(property => {
+            const propertyAppointments = appointments.filter(
+              appointment => appointment.property.property_id === property.propertyId
+            )
+            return {
+              ...property,
+              appointmentCount: propertyAppointments.length
+            }
+          })
+          
+          setMyProperties(propertiesWithAppointments)
+        } catch (err) {
+          console.error('Failed to fetch appointments:', err)
+          // If appointments fetch fails, still show properties with 0 appointments
+          const owned = properties.filter((prop) => prop.landlordId === user.userId)
+          setMyProperties(owned.map(property => ({ ...property, appointmentCount: 0 })))
+        }
+      }
     }
+
+    fetchPropertiesWithAppointments()
   }, [properties, user])
 
   // Get image path based on property type
@@ -125,39 +157,21 @@ export default function LandlordPropertiesPage() {
                       </CardDescription>
                     </CardHeader>
                     
-                    <CardContent className="p-4 pt-2">
-                      <div className="flex items-center">
-                        <div className="flex items-center text-blue-400 font-bold text-lg">
-                          <IndianRupee className="h-4 w-4 mr-1" />
-                          {property.price}
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="flex items-center text-blue-400 font-bold text-lg">
+                            <IndianRupee className="h-4 w-4 mr-1" />
+                            {property.price}
+                          </div>
+                          <span className="text-gray-400 text-sm ml-1">/month</span>
                         </div>
-                        <span className="text-gray-400 text-sm ml-1">/month</span>
+                        <div className="flex items-center text-gray-300">
+                          <Calendar className="h-4 w-4 mr-1 text-gray-400" />
+                          <span>{property.appointmentCount} appointments</span>
+                        </div>
                       </div>
                     </CardContent>
-                    
-                    <CardFooter className="p-4 pt-2 flex justify-between gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-amber-400 border-amber-800/50 hover:bg-amber-900/20 hover:text-amber-300 flex-1"
-                      >
-                        <Link
-                          href={`/landlord/properties/${property.propertyId}/edit`}
-                          className="flex items-center justify-center w-full"
-                        >
-                          <Edit2 className="h-4 w-4 mr-1.5" />
-                          Edit
-                        </Link>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-red-400 border-red-800/50 hover:bg-red-900/20 hover:text-red-300 flex-1"
-                      >
-                        <Trash2 className="h-4 w-4 mr-1.5" />
-                        Delete
-                      </Button>
-                    </CardFooter>
                   </Card>
                 ))}
               </div>
